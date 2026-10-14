@@ -6,7 +6,7 @@ A small shell implementation written in C as part of my journey into systems pro
 
 I'm building this project to learn C through practice and better understand how command-line shells work on Linux.
 
-Rather than following a tutorial from start to finish, I'm using the project to explore concepts, solve problems, and improve my understanding of what's happening under the hood.
+ I'm using the project to explore concepts, solve problems, and improve my understanding of what's happening.
 
 ## Goals
 
@@ -18,7 +18,6 @@ Rather than following a tutorial from start to finish, I'm using the project to 
 - C
 - GCC
 - Linux
-- Git
 
 ## Build and Run
 
@@ -28,11 +27,6 @@ Compile the source code:
 gcc -Wall -Wextra -Wpedantic main.c -o main
 ```
 
-Run the program:
-
-```bash
-./main
-```
 
 ## Progress
 
@@ -40,9 +34,5 @@ This project is a work in progress. Features and improvements will be added as I
 
 ## What I'm Learning
 
-I'm using this project to connect C programming concepts with real behavior on Linux, rather than treating them as isolated exercises.
-
-## License
-
-No license specified yet.
+I'm using this project to connect C programming concepts with Linux.
 
