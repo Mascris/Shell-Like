@@ -11,10 +11,7 @@ Rather than following a tutorial from start to finish, I'm using the project to 
 ## Goals
 
 - Improve my C programming skills.
-- Understand how shells parse and execute commands.
-- Learn more about Linux and Unix-like systems.
-- Get hands-on experience with systems programming.
-- Practice debugging, testing, and using Git.
+
 
 ## Built With
 
