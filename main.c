@@ -16,9 +16,9 @@ int check_builtin(char *name){
 
 //NOTE: Finished 2026-10-14 19:03
 char *locate_executable(char *name){
-  char buf[64];
+  char buf[4096];
   char *path = getenv("PATH");
-  char *save;
+  char *save = NULL;
 
   if (path == NULL) 
     return NULL;
@@ -37,6 +37,26 @@ char *locate_executable(char *name){
   return save;
 }
 
+  
+char *getexe(char *name,const char **argv){
+  char *path = getenv("PATH");
+  char *copy = strdup(path);
+  char *save = NULL;
+  char buf[1024];
+  int status;
+  pid_t my_pid;
+
+  if (path == NULL) 
+    return NULL;
+  for (char *dir = strtok(copy, ":"); dir != NULL ; dir = strtok(NULL, ":")) {
+    snprintf(buf, sizeof(buf), "%s/%s", dir,name);
+      if(access(buf, X_OK) == 0){
+        save = strdup(buf);
+        break;}
+  }
+  free(copy);
+  return save;
+}
 
 int  main(int argc, char *argv[])
 {
