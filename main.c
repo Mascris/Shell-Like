@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 char *builtins[] = {"type", "echo", "exit", NULL};
@@ -41,24 +42,34 @@ char *locate_executable(char *name){
 
 //NOTE: Working on this Now
 //get executable and execute and pass an arguments
-char *getexe(char *name,const char *argv[]){
+char *getexe(char *name,char *targ){
   char *path = getenv("PATH");
   char *copy = strdup(path);
   char *save = NULL;
   char exec[1024];
-  pid_t pid = fork();
 
   if (path == NULL) 
     return NULL;
   for (char *dir = strtok(copy, ":"); dir != NULL ; dir = strtok(NULL, ":")) {
     snprintf(exec, sizeof(exec), "%s/%s", dir,name);
       if(access(exec, X_OK) == 0){
+      pid_t pid = fork();
+
         if (pid < 0) {
           perror("fork failed");
           return NULL;
         }
+
         if (pid == 0) {
-        int execv(exec, agrv);
+        int i = 0;
+        char *args[100]; 
+        for (char *arg = strtok(targ, " "); arg != NULL; arg = strtok(NULL, " ")) {
+          args[i++] = arg;
+        }
+          args[i] = NULL;
+        execv(exec, args);
+        perror("Failed to Create Child");
+        break;
         }
       }
   }
@@ -66,7 +77,7 @@ char *getexe(char *name,const char *argv[]){
   return save;
 }
 
-int  main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   setbuf(stdout, NULL);
   char input[100];
@@ -79,6 +90,8 @@ int  main(int argc, char *argv[])
       break;
   //input[strlen(input) - 1] = '\0';
   input[strcspn(input,"\n")] = '\0';
+  char *dup = strdup(input);
+    char *name = strtok(dup, " ");
 
     if (strcmp(input, "exit")== 0 )
       break;
@@ -104,6 +117,10 @@ int  main(int argc, char *argv[])
 
       else
         printf("%s: not found\n",arg);
+    }
+      
+    else if (getexe(name, input) != NULL) {
+
     }
 
     else if (strncmp(input, "echo ", 5)== 0)
