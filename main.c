@@ -18,6 +18,7 @@ int check_builtin(char *name){
 }
 
 //NOTE: Finished 2026-10-14 19:03 Old Version!!
+//check in path for builtin
 char *locate_executable(char *name){
   char buf[4096];
   char *path = getenv("PATH");
@@ -25,10 +26,12 @@ char *locate_executable(char *name){
 
   if (path == NULL) 
     return NULL;
+
   char *copy = strdup(path);
   char *dir = strtok(copy, ":");
+
   while (dir != NULL) {
-    snprintf(buf, sizeof(buf),"%s/%s", dir, name);
+    snprintf(buf, sizeof(buf),"%s/%s", dir, name);  
     if (access(buf, X_OK) == 0){
       save = strdup(buf);
     break;
@@ -50,6 +53,7 @@ char *getexe(char *name,char *targ){
 
   if (path == NULL) 
     return NULL;
+
   for (char *dir = strtok(copy, ":"); dir != NULL ; dir = strtok(NULL, ":")) {
     snprintf(exec, sizeof(exec), "%s/%s", dir,name);
       if(access(exec, X_OK) == 0){
@@ -90,6 +94,8 @@ int main(int argc, char *argv[])
       break;
   //input[strlen(input) - 1] = '\0';
   input[strcspn(input,"\n")] = '\0';
+
+  //spliting name from the input for execv
   char *dup = strdup(input);
     char *name = strtok(dup, " ");
 
