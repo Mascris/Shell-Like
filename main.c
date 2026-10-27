@@ -18,7 +18,7 @@ int check_builtin(char *name){
   return 0;
 }
 
-//NOTE: Finished 2026-10-14 19:03 Old Version!!
+//NOTE: Finished 2026-10-14 19:03
 //check in path for builtin
 char *locate_executable(char *name){
   char buf[4096];
@@ -44,8 +44,8 @@ char *locate_executable(char *name){
   return save;
 }
 
-//NOTE: Working on this Now
-//get executable and execute and pass an arguments
+//NOTE: Finished this for Now
+//2026-10-27 01:32
 char *getexe(char *name,char *targ){
   char *path = getenv("PATH");
   char *copy = strdup(path);
@@ -135,7 +135,6 @@ int main(int argc, char *argv[])
     else{
     char *save = getexe(name, input);
       if (save != NULL) {
-        printf("");
         free(save);
       }
       else {
