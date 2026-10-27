@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 char *builtins[] = {"type", "echo", "exit", NULL};
@@ -73,8 +74,11 @@ char *getexe(char *name,char *targ){
           args[i] = NULL;
         execv(exec, args);
         perror("Failed to Create Child");
-        break;
         }
+      int status;
+      waitpid(pid,&status,0);
+        save = strdup(exec);
+        break;
       }
   }
   free(copy);
@@ -124,16 +128,20 @@ int main(int argc, char *argv[])
       else
         printf("%s: not found\n",arg);
     }
-      
-    else if (getexe(name, input) != NULL) {
-
-    }
 
     else if (strncmp(input, "echo ", 5)== 0)
       printf("%s\n", input + 5);
-
-    else 
-      printf("%s: not found\n", input);
+      
+    else{
+    char *save = getexe(name, input);
+      if (save != NULL) {
+        printf("");
+        free(save);
+      }
+      else {
+        printf("%s: not found",input);
+      }
+    }
   }
   return 0;
 }
