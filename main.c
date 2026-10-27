@@ -5,15 +5,14 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-char *builtins[] = {"type", "echo", "exit", NULL};
+char *builtins[] = {"type", "echo", "exit", "pwd", NULL};
 
-//TODO: Adding a exec and argv using "fork and exec"
 //TODO: need to make it more polished and make lesser condition
 
 //check for Builtin command that are in builtins array
 int check_builtin(char *name){
   for (int i = 0; builtins[i] != NULL; i++)
-    if (strncmp(name, builtins[i], 4)== 0)
+    if (strcmp(name, builtins[i])== 0)
       return 1;
   return 0;
 }
@@ -44,17 +43,21 @@ char *locate_executable(char *name){
   return save;
 }
 
+char *curent_dir(void){
+  return getcwd(NULL, 0);
+}
+
 //NOTE: Finished this for Now
 //2026-10-27 01:32
 char *getexe(char *name,char *targ){
   char *path = getenv("PATH");
-  char *copy = strdup(path);
   char *save = NULL;
   char exec[1024];
 
   if (path == NULL) 
     return NULL;
 
+  char *copy = strdup(path);
   for (char *dir = strtok(copy, ":"); dir != NULL ; dir = strtok(NULL, ":")) {
     snprintf(exec, sizeof(exec), "%s/%s", dir,name);
       if(access(exec, X_OK) == 0){
@@ -66,6 +69,7 @@ char *getexe(char *name,char *targ){
         }
 
         if (pid == 0) {
+        //child process
         int i = 0;
         char *args[100]; 
         for (char *arg = strtok(targ, " "); arg != NULL; arg = strtok(NULL, " ")) {
@@ -74,7 +78,9 @@ char *getexe(char *name,char *targ){
           args[i] = NULL;
         execv(exec, args);
         perror("Failed to Create Child");
+        exit(1);
         }
+      //parents process
       int status;
       waitpid(pid,&status,0);
         save = strdup(exec);
@@ -88,14 +94,16 @@ char *getexe(char *name,char *targ){
 int main(int argc, char *argv[])
 {
   setbuf(stdout, NULL);
-  char input[100];
+  char input[1024];
   
   while (1) {
 
   printf("$ ");
   fflush(stdout);
+
     if (fgets(input, sizeof(input), stdin) == NULL)
       break;
+
   //input[strlen(input) - 1] = '\0';
   input[strcspn(input,"\n")] = '\0';
 
@@ -131,6 +139,12 @@ int main(int argc, char *argv[])
 
     else if (strncmp(input, "echo ", 5)== 0)
       printf("%s\n", input + 5);
+
+    else if (strcmp(input, "pwd") == 0){
+      char *save = curent_dir();
+      printf("%s\n",save);
+      free(save);
+    }
       
     else{
     char *save = getexe(name, input);
