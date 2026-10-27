@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
         free(save);
       }
       else {
-        printf("%s: not found",input);
+        printf("%s: command not found\n",input);
       }
     }
   }
