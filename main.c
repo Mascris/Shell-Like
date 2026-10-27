@@ -5,7 +5,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-char *builtins[] = {"type", "echo", "exit", "pwd", NULL};
+char *builtins[] = {"type", "echo", "exit", "pwd", "cd",NULL};
 
 //TODO: need to make it more polished and make lesser condition
 
@@ -91,6 +91,13 @@ char *getexe(char *name,char *targ){
   return save;
 }
 
+int change_dir(char *name){
+  if (chdir(name) == 0)
+    return 0;
+  else
+    return 1;
+}
+
 int main(int argc, char *argv[])
 {
   setbuf(stdout, NULL);
@@ -144,6 +151,14 @@ int main(int argc, char *argv[])
       char *save = curent_dir();
       printf("%s\n",save);
       free(save);
+    }
+
+    else if (strncmp(input, "cd ", 3) == 0) {
+      char *target = input + 3;
+      int save = change_dir(target);
+      if (save != 0) {
+        printf("cd: %s: No such file or directory\n",target);
+      }
     }
       
     else{
