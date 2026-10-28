@@ -93,13 +93,12 @@ int change_dir(char *name){
 }
 
 int change_dir_home(void){
-  char *path = getenv("HOME");
-  if (chdir(path) == 0)
+  char *home = getenv("HOME");
+  if (chdir(home) == 0)
     return 0;
   else 
     return 1;
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -129,7 +128,7 @@ int main(int argc, char *argv[])
       else{
         char *save = locate_executable(arg);
         if (save != NULL) { printf("%s is %s \n",arg,save); free(save); }
-        else printf("%s not found\n",arg);
+        else fprintf(stderr,"%s not found\n",arg);
       } 
     }
 
@@ -162,7 +161,7 @@ int main(int argc, char *argv[])
         free(save);
       }
       else {
-        printf("%s: command not found\n",input);
+        fprintf(stderr,"%s: command not found\n",input);
       }
     }
     free(dup);
