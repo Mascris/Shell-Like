@@ -7,9 +7,7 @@
 
 char *builtins[] = {"type", "echo", "exit", "pwd", "cd",NULL};
 
-//TODO: need to make it more polished and make lesser condition
 
-//check for Builtin command that are in builtins array
 int check_builtin(char *name){
   for (int i = 0; builtins[i] != NULL; i++)
     if (strcmp(name, builtins[i])== 0)
@@ -17,8 +15,6 @@ int check_builtin(char *name){
   return 0;
 }
 
-//NOTE: Finished 2026-10-14 19:03
-//check in path for builtin
 char *locate_executable(char *name){
   char buf[4096];
   char *path = getenv("PATH");
@@ -43,12 +39,6 @@ char *locate_executable(char *name){
   return save;
 }
 
-char *curent_dir(void){
-  return getcwd(NULL, 0);
-}
-
-//NOTE: Finished this for Now
-//2026-10-27 01:32
 char *getexe(char *name,char *targ){
   char *path = getenv("PATH");
   char *save = NULL;
@@ -91,12 +81,25 @@ char *getexe(char *name,char *targ){
   return save;
 }
 
+char *curent_dir(void){
+  return getcwd(NULL, 0);
+}
+
 int change_dir(char *name){
   if (chdir(name) == 0)
     return 0;
   else
     return 1;
 }
+
+int change_dir_home(void){
+  char *path = getenv("HOME");
+  if (chdir(path) == 0)
+    return 0;
+  else 
+    return 1;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -110,38 +113,24 @@ int main(int argc, char *argv[])
 
     if (fgets(input, sizeof(input), stdin) == NULL)
       break;
-
-  //input[strlen(input) - 1] = '\0';
-  input[strcspn(input,"\n")] = '\0';
+    input[strcspn(input,"\n")] = '\0';
 
   //spliting name from the input for execv
-  char *dup = strdup(input);
+    char *dup = strdup(input);
     char *name = strtok(dup, " ");
+    if (name == NULL) { free(dup); continue; }
 
-    if (strcmp(input, "exit")== 0 )
-      break;
+    if (strcmp(input, "exit") == 0 ) { free(dup); break;}
 
     else if (strncmp(input, "type ", 5) == 0) {
        char *arg = input + 5;
-
       if (check_builtin(arg))
         printf("%s is a shell builtin\n", arg);
-
-      else if (locate_executable(arg)!= NULL){
-        char *save=locate_executable(arg);
-
-        if (save != NULL) {
-        printf("%s is %s\n",arg, save);
-        free(save);
-        save = NULL;
-        }
-
-        else
-          printf("%s: not found\n",arg);
-    }
-
-      else
-        printf("%s: not found\n",arg);
+      else{
+        char *save = locate_executable(arg);
+        if (save != NULL) { printf("%s is %s \n",arg,save); free(save); }
+        else printf("%s not found\n",arg);
+      } 
     }
 
     else if (strncmp(input, "echo ", 5)== 0)
@@ -153,14 +142,20 @@ int main(int argc, char *argv[])
       free(save);
     }
 
+    else if (strcmp(input, "cd ~") == 0 || strcmp(input, "cd") == 0) {
+      if (change_dir_home() != 0) {
+        fprintf(stderr, "HOME is not Set\n");
+      }
+    }
+
     else if (strncmp(input, "cd ", 3) == 0) {
       char *target = input + 3;
       int save = change_dir(target);
       if (save != 0) {
-        printf("cd: %s: No such file or directory\n",target);
+        fprintf(stderr,"cd: %s: No such file or directory\n",target);
       }
     }
-      
+
     else{
     char *save = getexe(name, input);
       if (save != NULL) {
@@ -170,6 +165,7 @@ int main(int argc, char *argv[])
         printf("%s: command not found\n",input);
       }
     }
+    free(dup);
   }
   return 0;
 }
