@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 char *builtins[] = {"type", "echo", "exit", "pwd", "cd",NULL};
 
@@ -98,6 +99,40 @@ int change_dir_home(void){
     return 0;
   else 
     return 1;
+}
+
+char redir_output(char *input){
+  char exec[100];
+  char *path = getenv("PATH");
+  if (path == NULL)
+    return NULL;
+
+  char *copy = strdup(path) ;
+  for (char *dir = strtok(copy, ":"); dir != NULL; dir = strtok(NULL, ":") ) {
+    snprintf(exec, sizeof(exec), "%s/%s", dir, input);
+      if (access(exec, X_OK) == 0) {
+        pid_t pid = fork();
+          if (pid < 0) {
+            perror("Error fork");
+            return NULL;
+          }
+          
+          if (pid == 0) {
+            int fd = open("output.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644 );
+            int i;
+            char *args[100];
+            for (char *arg = strtok(path, " "); arg != NULL ; arg = strtok(NULL, " ")) {
+              args[i++] = arg;
+            }
+              args[i] = NULL;
+              dup2(fd, 1);
+              close(fd);
+              execvp(exec, args);
+              fprintf(stderr, "Execvp Failed\n");
+              exit(1);
+          }
+      }
+  }
 }
 
 int main(int argc, char *argv[])
