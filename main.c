@@ -124,7 +124,6 @@ int main(int argc, char *argv[])
       break;
     input[strcspn(input, "\n")] = '\0';
 
-
     int i = 0;
     char *tokens[128];
     for (char *arg = strtok(input, " "); arg != NULL; arg = strtok(NULL, " ") ) {
@@ -181,7 +180,7 @@ int main(int argc, char *argv[])
     }
 
     else if (strcmp(tokens[0], "cd") == 0) {
-      if (strcmp(tokens[1], "~") == 0 || tokens[1] == NULL) {
+      if (tokens[1] == NULL || strcmp(tokens[1], "~") == 0) {
         if (change_dir_home() != 0) {
           fprintf(stderr, "HOME is not set\n");
         }
@@ -196,6 +195,11 @@ int main(int argc, char *argv[])
     }
     else {
     process(tokens, in_file, out_file, err_file);
+    }
+    if (saved_out != -1) {
+      fflush(stdout);
+      dup2(saved_out, 1);
+      close(saved_out);
     }
   }
   return 0;
