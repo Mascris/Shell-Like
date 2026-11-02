@@ -1,6 +1,6 @@
 # Shell-Like
 
-A small shell implementation written in C as part of my journey into systems programming.
+A small shell implementation written in C, just for fun.
 
 ## About
 
@@ -20,19 +20,20 @@ I'm building this project to learn C through practice and better understand how 
 - GCC
 - Linux
 - Git
+- Makefile
 
 ## Build and Run
 
 Compile the source code:
 
 ```bash
-gcc -Wall -Wextra -Wpedantic main.c -o main
+make
 ```
 
 Run the program:
 
 ```bash
-./main
+./shell
 ```
 
 ## Progress
