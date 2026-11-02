@@ -1,8 +1,10 @@
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <threads.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -40,47 +42,6 @@ char *locate_executable(char *name){
   return save;
 }
 
-char *getexe(char *name,char *targ){
-  char *path = getenv("PATH");
-  char *save = NULL;
-  char exec[1024];
-
-  if (path == NULL) 
-    return NULL;
-
-  char *copy = strdup(path);
-  for (char *dir = strtok(copy, ":"); dir != NULL ; dir = strtok(NULL, ":")) {
-    snprintf(exec, sizeof(exec), "%s/%s", dir,name);
-      if(access(exec, X_OK) == 0){
-      pid_t pid = fork();
-
-        if (pid < 0) {
-          perror("fork failed");
-          return NULL;
-        }
-
-        if (pid == 0) {
-        //child process
-        int i = 0;
-        char *args[100]; 
-        for (char *arg = strtok(targ, " "); arg != NULL; arg = strtok(NULL, " ")) {
-          args[i++] = arg;
-        }
-          args[i] = NULL;
-        execv(exec, args);
-        perror("Failed to Create Child");
-        exit(1);
-        }
-      //parents process
-      int status;
-      waitpid(pid,&status,0);
-        save = strdup(exec);
-        break;
-      }
-  }
-  free(copy);
-  return save;
-}
 
 char *curent_dir(void){
   return getcwd(NULL, 0);
@@ -101,39 +62,52 @@ int change_dir_home(void){
     return 1;
 }
 
-char redir_output(char *input){
-  char exec[100];
-  char *path = getenv("PATH");
-  if (path == NULL)
-    return NULL;
+int process(char **args, char *in_file, char *out_file, char *err_file){
+  char *save = NULL;
+  pid_t pid = fork();
 
-  char *copy = strdup(path) ;
-  for (char *dir = strtok(copy, ":"); dir != NULL; dir = strtok(NULL, ":") ) {
-    snprintf(exec, sizeof(exec), "%s/%s", dir, input);
-      if (access(exec, X_OK) == 0) {
-        pid_t pid = fork();
-          if (pid < 0) {
-            perror("Error fork");
-            return NULL;
-          }
-          
-          if (pid == 0) {
-            int fd = open("output.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644 );
-            int i;
-            char *args[100];
-            for (char *arg = strtok(path, " "); arg != NULL ; arg = strtok(NULL, " ")) {
-              args[i++] = arg;
-            }
-              args[i] = NULL;
-              dup2(fd, 1);
-              close(fd);
-              execvp(exec, args);
-              fprintf(stderr, "Execvp Failed\n");
-              exit(1);
-          }
-      }
+  if (pid < 0) {
+    perror("Fork Failed");
+    return -1;
   }
+  if (pid == 0) {
+    if (in_file != NULL) {
+      int fd = open(in_file, O_RDONLY);
+      if (fd < 0) {
+        perror("Open input");
+        exit(1);
+      }
+      dup2(fd, STDIN_FILENO);
+      close(fd);
+    }
+    if (out_file != NULL) {
+      int fd = open(out_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+      if (fd < 0) {
+        perror("Open Output");
+        exit(1);
+      }
+      dup2(fd, STDOUT_FILENO);
+      close(fd);
+    }
+    if (err_file != NULL) {
+      int fd = open(err_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+      if (fd < 0) {
+        perror("Open error");
+        exit(1);
+      }
+      dup2(fd, STDERR_FILENO);
+      close(fd);
+    }
+    execvp(args[0], args);
+    fprintf(stderr, "%s: command not found\n",args[0]);
+    exit(1);
+  }
+  int status;
+    waitpid(pid,&status,0);
+  return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -142,64 +116,81 @@ int main(int argc, char *argv[])
   
   while (1) {
 
-  printf("$ ");
-  fflush(stdout);
+    
+    printf("$ ");
+    fflush(stdout);
 
-    if (fgets(input, sizeof(input), stdin) == NULL)
+    if (fgets(input, sizeof(input), stdin) == NULL) 
       break;
-    input[strcspn(input,"\n")] = '\0';
+    input[strcspn(input, "\n")] = '\0';
 
-  //spliting name from the input for execv
-    char *dup = strdup(input);
-    char *name = strtok(dup, " ");
-    if (name == NULL) { free(dup); continue; }
 
-    if (strcmp(input, "exit") == 0 ) { free(dup); break;}
+    //tokenization
+    int i = 0;
+    char *tokens[128];
+    for (char *arg = strtok(input, " "); arg != NULL; arg = strtok(NULL, " ") ) {
+      tokens[i++] =  arg;
+    }
+    tokens[i] = NULL;
 
-    else if (strncmp(input, "type ", 5) == 0) {
-       char *arg = input + 5;
-      if (check_builtin(arg))
-        printf("%s is a shell builtin\n", arg);
+    char *in_file =NULL;
+    char *err_file =NULL;
+    char *out_file =NULL;
+    for(int i = 0; tokens[i] != NULL; i++) {
+      if (strcmp(tokens[i], ">") == 0 || strcmp(tokens[i], "1>") == 0) {
+        tokens[i] = NULL;
+        out_file = tokens[i+1];
+        i++;
+      }
+      else if (strcmp(tokens[i], "2>") == 0) {
+        tokens[i] = NULL;
+        err_file = tokens[i+1];
+        i++;
+      }
+      else if (strcmp(tokens[i], "<") == 0) {
+        tokens[i] = NULL;
+        err_file = tokens[i+1];
+        i++;
+      }
+    }
+
+    if (tokens[0] == NULL)
+      continue;
+
+    if (strcmp(tokens[0], "exit") == 0)
+      break;
+
+    else if (strcmp(tokens[0], "echo") == 0){
+      for (int i = 1; tokens[i] != NULL; i++) {
+        printf("%s%s", tokens[i], tokens[i+1] ? " ":"");
+      }
+      printf("\n");
+    }
+
+    else if (strcmp(tokens[0], "pwd") == 0) {
+      char *cwd = curent_dir();
+      printf("%s\n",cwd);
+      free(cwd);
+    }
+
+    else if (strcmp(tokens[0], "cd") == 0) {
+      if (strcmp(tokens[1], "~") == 0 || tokens[1] == NULL) {
+        if (change_dir_home() != 0) {
+          fprintf(stderr, "HOME is not set\n");
+        }
+      }
       else{
-        char *save = locate_executable(arg);
-        if (save != NULL) { printf("%s is %s \n",arg,save); free(save); }
-        else fprintf(stderr,"%s not found\n",arg);
-      } 
-    }
-
-    else if (strncmp(input, "echo ", 5)== 0)
-      printf("%s\n", input + 5);
-
-    else if (strcmp(input, "pwd") == 0){
-      char *save = curent_dir();
-      printf("%s\n",save);
-      free(save);
-    }
-
-    else if (strcmp(input, "cd ~") == 0 || strcmp(input, "cd") == 0) {
-      if (change_dir_home() != 0) {
-        fprintf(stderr, "HOME is not Set\n");
+        char *target = tokens[1];
+        int save = change_dir(target);
+          if (save != 0) {
+            fprintf(stderr,"cd: %s: No such file or directory\n",target);
+          }
       }
     }
-
-    else if (strncmp(input, "cd ", 3) == 0) {
-      char *target = input + 3;
-      int save = change_dir(target);
-      if (save != 0) {
-        fprintf(stderr,"cd: %s: No such file or directory\n",target);
-      }
+    else {
+    process(tokens, in_file, out_file, err_file);
     }
-
-    else{
-    char *save = getexe(name, input);
-      if (save != NULL) {
-        free(save);
-      }
-      else {
-        fprintf(stderr,"%s: command not found\n",input);
-      }
-    }
-    free(dup);
   }
   return 0;
 }
+
