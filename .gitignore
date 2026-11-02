@@ -5,4 +5,4 @@ obj/
 #Exec
 shell
 
-*.gdb_history
+.gdb_history
