@@ -125,7 +125,6 @@ int main(int argc, char *argv[])
     input[strcspn(input, "\n")] = '\0';
 
 
-    //tokenization
     int i = 0;
     char *tokens[128];
     for (char *arg = strtok(input, " "); arg != NULL; arg = strtok(NULL, " ") ) {
@@ -149,7 +148,7 @@ int main(int argc, char *argv[])
       }
       else if (strcmp(tokens[i], "<") == 0) {
         tokens[i] = NULL;
-        err_file = tokens[i+1];
+        in_file = tokens[i+1];
         i++;
       }
     }
@@ -157,6 +156,14 @@ int main(int argc, char *argv[])
     if (tokens[0] == NULL)
       continue;
 
+    int saved_out = -1;
+    if(out_file != NULL && check_builtin(tokens[0])){
+      saved_out = dup(1);
+      int fd = open(out_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+      dup2(fd, 1);
+      close(fd);
+    }
+  
     if (strcmp(tokens[0], "exit") == 0)
       break;
 
