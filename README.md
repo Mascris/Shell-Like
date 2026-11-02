@@ -56,7 +56,7 @@ make fclean
 Shell-Like/
 ├── main.c
 ├── process.c
-├── directories.c
+├── builtins.c
 ├── shell.h
 ├── Makefile
 ├── README.md

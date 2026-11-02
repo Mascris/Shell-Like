@@ -4,7 +4,7 @@ CFLAGS = -Wall -Wextra -g
 
 NAME = shell 
 
-SRC = main.c process.c directories.c
+SRC = main.c process.c builtins.c
 
 OBJ = $(SRC:.c=.o)
 
