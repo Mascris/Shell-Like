@@ -1,1 +1,7 @@
-main
+#OBJ Files
+obj/
+*.o
+
+#Exec
+shell
+
